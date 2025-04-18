@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac Toe vs AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background:rgb(247, 247, 247);
+        }
+
+        h1 {
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 5px;
+            margin-top: 30px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: #fff;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .cell:hover {
+            background: #e6e6e6;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+
+        .restart-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .restart-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe vs AI</h1>
+    <div class="board" id="board"></div>
+    <div class="status" id="status"></div>
+    <button class="restart-btn" onclick="initGame()">Restart Game</button>
+
+    <script>
+        let board = [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', '']
+        ];
+
+        let gameOver = false;
+
+        function createBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.innerText = board[i][j];
+                    cell.addEventListener('click', onCellClick);
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function onCellClick(e) {
+            if (gameOver) return;
+
+            const row = e.target.dataset.row;
+            const col = e.target.dataset.col;
+
+            if (board[row][col] !== '') return;
+
+            board[row][col] = 'X';
+            updateBoard();
+
+            fetch('/api/ai-move/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({ board: board })
+            })
+            .then(response => response.json())
+            .then(data => {
+                board = data.board;
+                updateBoard();
+                if (data.winner) {
+                    endGame(data.winner);
+                }
+            });
+        }
+
+        function updateBoard() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const row = cell.dataset.row;
+                const col = cell.dataset.col;
+                cell.innerText = board[row][col];
+            });
+        }
+
+        function endGame(winner) {
+            gameOver = true;
+            const status = document.getElementById('status');
+            if (winner === 'draw') {
+                status.innerText = "It's a draw!";
+            } else {
+                status.innerText = winner === 'X' ? 'You win!' : 'AI wins!';
+            }
+        }
+
+        function initGame() {
+            board = [
+                ['', '', ''],
+                ['', '', ''],
+                ['', '', '']
+            ];
+            gameOver = false;
+            document.getElementById('status').innerText = '';
+            createBoard();
+        }
+
+        function getCSRFToken() {
+            let cookieValue = null;
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith('csrftoken=')) {
+                    cookieValue = decodeURIComponent(cookie.substring('csrftoken='.length));
+                    break;
+                }
+            }
+            return cookieValue;
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
