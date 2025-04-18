@@ -38,8 +38,8 @@ Follow these steps to set up the project locally:
 
    ```bash
    python3 -m venv venv
-   `venv/bin/activate` # On Mac use source
-   `venv\Scripts\activate` # On Windows use
+   venv/bin/activate # On Mac use source
+   venv\Scripts\activate # On Windows use
    ```
 
 3. **Install Dependencies**:
